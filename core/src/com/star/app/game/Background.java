@@ -25,8 +25,8 @@ public class Background {
         }
 
         public void update(float dt) {
-            position.x += (velocity.x - gc.getHero().getLastDisplacement().x * 15) * dt;
-            position.y += (velocity.y - gc.getHero().getLastDisplacement().y * 15) * dt;
+            position.x += (velocity.x - gc.getHero().getVelocity().x * 0.1) * dt;
+            position.y += (velocity.y - gc.getHero().getVelocity().y * 0.1) * dt;
 
             if (position.x < -20) {
                 position.x = ScreenManager.SCREEN_HEIGHT + 200;

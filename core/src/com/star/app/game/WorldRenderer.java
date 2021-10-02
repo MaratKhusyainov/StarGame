@@ -13,11 +13,11 @@ public class WorldRenderer {
     }
 
     public void render () {
-
         ScreenUtils.clear(0, 0.2f, 0.5f, 1);
         batch.begin();
         gc.getBackground().render(batch);
         gc.getHero().render(batch);
+        gc.getBulletController().render(batch);
         batch.end();
     }
 }
