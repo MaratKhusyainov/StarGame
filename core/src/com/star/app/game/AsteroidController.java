@@ -1,11 +1,13 @@
 package com.star.app.game;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.star.app.game.helpers.ObjectPool;
 
-public class AsteroidController {
+
+public class AsteroidController extends ObjectPool<Asteroid> {
     private GameController gc;
 
-
+    @Override
     protected Asteroid newObject() {
         return new Asteroid(gc);
     }
