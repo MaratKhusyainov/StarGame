@@ -7,6 +7,7 @@ import com.star.app.game.helpers.ObjectPool;
 import com.star.app.screen.utils.Assets;
 
 public class PowerUpsController extends ObjectPool<PowerUp> {
+
     private GameController gc;
     private TextureRegion[][] textures;
 
@@ -41,5 +42,4 @@ public class PowerUpsController extends ObjectPool<PowerUp> {
         }
         checkPool();
     }
-
 }

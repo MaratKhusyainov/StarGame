@@ -12,7 +12,9 @@ public class Bullet implements Poolable {
     private Vector2 velocity;
     private boolean active;
 
-    public Vector2 getVelocity() { return velocity; }
+    public Vector2 getVelocity() {
+        return velocity;
+    }
 
     public Vector2 getPosition() {
         return position;
@@ -23,7 +25,7 @@ public class Bullet implements Poolable {
         return active;
     }
 
-    public Bullet() {
+    public Bullet(GameController gc) {
         this.gc = gc;
         this.position = new Vector2(0, 0);
         this.velocity = new Vector2(0, 0);

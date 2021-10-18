@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.star.app.game.helpers.Poolable;
 
 public class Particle implements Poolable {
+
     private Vector2 position;
     private Vector2 velocity;
     private float r1, g1, b1, a1;
@@ -116,4 +117,5 @@ public class Particle implements Poolable {
             deactivate();
         }
     }
+
 }

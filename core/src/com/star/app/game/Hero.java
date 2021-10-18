@@ -10,10 +10,22 @@ import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.StringBuilder;
 import com.star.app.screen.ScreenManager;
 import com.star.app.screen.utils.Assets;
 
 public class Hero {
+
+    public enum Skill {
+        HP_MAX(20), HP(20), WEAPON(100), MAGNET(50);
+
+        int cost;
+
+        Skill(int cost) {
+            this.cost = cost;
+        }
+    }
+
     private GameController gc;
     private TextureRegion texture;
     private Vector2 position;
@@ -23,22 +35,68 @@ public class Hero {
     private float fireTimer;
     private int score;
     private int scoreView;
+    private int hpMax;
     private int hp;
+    private int money;
     private StringBuilder stringBuilder;
     private Circle hitArea;
+    private Circle magneticField;
     private Weapon currentWeapon;
+    private Shop shop;
+    private Weapon[] weapons;
+    private int weaponNum;
 
-    public Circle getHitArea() { return hitArea; }
+    public Circle getMagneticField() {
+        return magneticField;
+    }
 
-    public float getAngle() { return angle; }
+    public Shop getShop() {
+        return shop;
+    }
 
-    public int getScore() { return score; }
+    public int getMoney() {
+        return money;
+    }
 
-    public void addScore(int amount) { this.score += amount;}
+    public Circle getHitArea() {
+        return hitArea;
+    }
 
-    public Vector2 getVelocity() { return velocity; }
+    public float getAngle() {
+        return angle;
+    }
 
-    public Vector2 getPosition() { return position; }
+    public int getScore() {
+        return score;
+    }
+
+    public void addScore(int amount) {
+        this.score += amount;
+    }
+
+    public Vector2 getVelocity() {
+        return velocity;
+    }
+
+    public Vector2 getPosition() {
+        return position;
+    }
+
+    public boolean isAlive() {
+        return hp > 0;
+    }
+
+    public boolean isMoneyEnough(int amount) {
+        return money >= amount;
+    }
+
+    public void decreaseMoney(int amount) {
+        money -= amount;
+    }
+
+    public void setPause(boolean pause) {
+        gc.setPause(pause);
+    }
 
     public Hero(GameController gc) {
         this.gc = gc;
@@ -47,17 +105,16 @@ public class Hero {
         this.velocity = new Vector2(0, 0);
         this.angle = 0.0f;
         this.enginePower = 500.0f;
-        this.hp = 100;
+        this.hpMax = 100;
+        this.hp = hpMax;
+        this.money = 100;
+        this.shop = new Shop(this);
         this.stringBuilder = new StringBuilder();
         this.hitArea = new Circle(position, 26);
-        this.currentWeapon = new Weapon(
-                gc, this, "Laser", 0.2f, 1, 600, 100,
-                new Vector3[]{
-                        new Vector3(28, 0, 0),
-                        new Vector3(28, 90, 20),
-                        new Vector3(28, -90, -20)
-                }
-        );
+        this.magneticField = new Circle(position, 100);
+        createWeapons();
+        this.weaponNum = 0;
+        this.currentWeapon = weapons[weaponNum];
     }
 
     public void render(SpriteBatch batch) {
@@ -68,14 +125,59 @@ public class Hero {
     public void renderGUI(SpriteBatch batch, BitmapFont font) {
         stringBuilder.clear();
         stringBuilder.append("SCORE: ").append(scoreView).append("\n");
-        stringBuilder.append("HP: ").append(hp).append("\n");
+        stringBuilder.append("HP: ").append(hp).append(" / ").append(hpMax).append("\n");
+        stringBuilder.append("MONEY: ").append(money).append("\n");
         stringBuilder.append("BULLETS: ").append(currentWeapon.getCurBullets()).append(" / ")
                 .append(currentWeapon.getMaxBullets()).append("\n");
+        stringBuilder.append("MAGNETIC: ").append((int) magneticField.radius).append("\n");
         font.draw(batch, stringBuilder, 20, 700);
     }
 
     public void takeDamage(int amount) {
         hp -= amount;
+    }
+
+    public void consume(PowerUp p) {
+        switch (p.getType()) {
+            case MEDKIT:
+                hp += p.getPower();
+                if (hp > hpMax) {
+                    hp = hpMax;
+                }
+                break;
+            case MONEY:
+                money += p.getPower();
+                break;
+            case AMMOS:
+                currentWeapon.addAmmos(p.getPower());
+                break;
+        }
+    }
+
+    public boolean upgrade(Skill skill) {
+        switch (skill) {
+            case HP_MAX:
+                hpMax += 10;
+                return true;
+            case HP:
+                if (hp < hpMax) {
+                    hp += 10;
+                    if (hp > hpMax) {
+                        hp = hpMax;
+                    }
+                    return true;
+                }
+            case WEAPON:
+                if (weaponNum < weapons.length - 1) {
+                    weaponNum++;
+                    currentWeapon = weapons[weaponNum];
+                    return true;
+                }
+            case MAGNET:
+                magneticField.radius += 10;
+                return true;
+        }
+        return false;
     }
 
     public void update(float dt) {
@@ -95,8 +197,14 @@ public class Hero {
             velocity.x += MathUtils.cosDeg(angle) * enginePower * dt;
             velocity.y += MathUtils.sinDeg(angle) * enginePower * dt;
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
+            setPause(true);
+            shop.setVisible(true);
+        }
+
         position.mulAdd(velocity, dt);
         hitArea.setPosition(position);
+        magneticField.setPosition(position);
         float stopKoef = 1.0f - 1.0f * dt;
         if (stopKoef < 0) {
             stopKoef = 0;
@@ -134,8 +242,6 @@ public class Hero {
         if (fireTimer > 0.2) {
             fireTimer = 0.0f;
             currentWeapon.fire();
-             MathUtils.cosDeg(angle) * 500 + velocity.x, MathUtils.sinDeg(angle) * 500 + velocity.y);
-
         }
     }
 
@@ -157,4 +263,39 @@ public class Hero {
             velocity.y *= -1;
         }
     }
+
+    private void createWeapons() {
+        weapons = new Weapon[]{
+                new Weapon(
+                        gc, this, "Laser", 0.2f, 1, 600, 300,
+                        new Vector3[]{
+                                new Vector3(28, 90, 0),
+                                new Vector3(28, -90, 0)
+                        }),
+                new Weapon(
+                        gc, this, "Laser", 0.2f, 1, 600, 300,
+                        new Vector3[]{
+                                new Vector3(28, 0, 0),
+                                new Vector3(28, 90, 20),
+                                new Vector3(28, -90, -20)
+                        }),
+                new Weapon(
+                        gc, this, "Laser", 0.2f, 1, 600, 500,
+                        new Vector3[]{
+                                new Vector3(28, 0, 0),
+                                new Vector3(28, 90, 10),
+                                new Vector3(28, 90, 20),
+                                new Vector3(28, -90, -10),
+                                new Vector3(28, -90, -20)
+                        }),
+                new Weapon(
+                        gc, this, "Laser", 0.1f, 2, 600, 1000,
+                        new Vector3[]{
+                                new Vector3(28, 0, 0),
+                                new Vector3(28, 90, 16),
+                                new Vector3(28, -90, -16)
+                        }),
+        };
+    }
+
 }

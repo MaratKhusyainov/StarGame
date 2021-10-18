@@ -17,17 +17,25 @@ public class Asteroid implements Poolable {
     private Vector2 velocity;
     private int hp;
     private int hpMax;
-    private float angle;
-    private float rotationSpeed;
-    private float scale;
+    private float angle;//угол показа изображения
+    private float rotationSpeed;//скорость вращения
+    private float scale;//масштаб
     private boolean active;
     private Circle hitArea;
 
     private final float BASE_SIZE = 256.0f;
     private final float BASE_RADIUS = BASE_SIZE / 2;
 
+    public float getScale() {
+        return scale;
+    }
+
     public int getHpMax() {
         return hpMax;
+    }
+
+    public Vector2 getVelocity() {
+        return velocity;
     }
 
     public Circle getHitArea() {
@@ -64,7 +72,7 @@ public class Asteroid implements Poolable {
     public void activate(float x, float y, float vx, float vy, float scale) {
         this.position.set(x, y);
         this.velocity.set(vx, vy);
-        this.hpMax = (int) (7 * scale);
+        this.hpMax = (int) ((5 + gc.getLevel() * 2) * scale);
         this.hp = hpMax;
         this.angle = MathUtils.random(0.0f, 360.0f);
         this.rotationSpeed = MathUtils.random(-180.0f, 180.0f);
@@ -98,17 +106,17 @@ public class Asteroid implements Poolable {
         position.mulAdd(velocity, dt);
         angle += rotationSpeed * dt;
 
-        if (position.x < -200) {
-            position.x = ScreenManager.SCREEN_WIDTH + 200;
+        if (position.x < -hitArea.radius) {
+            position.x = ScreenManager.SCREEN_WIDTH + hitArea.radius;
         }
-        if (position.x > ScreenManager.SCREEN_WIDTH + 200) {
-            position.x = -200;
+        if (position.x > ScreenManager.SCREEN_WIDTH + hitArea.radius) {
+            position.x = -hitArea.radius;
         }
-        if (position.y < -200) {
-            position.y = ScreenManager.SCREEN_HEIGHT + 200;
+        if (position.y < -hitArea.radius) {
+            position.y = ScreenManager.SCREEN_HEIGHT + hitArea.radius;
         }
-        if (position.y > ScreenManager.SCREEN_HEIGHT + 200) {
-            position.y = -200;
+        if (position.y > ScreenManager.SCREEN_HEIGHT + hitArea.radius) {
+            position.y = -hitArea.radius;
         }
         hitArea.setPosition(position);
     }

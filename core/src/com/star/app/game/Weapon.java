@@ -1,7 +1,9 @@
 package com.star.app.game;
 
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
+import com.star.app.screen.utils.Assets;
 
 public class Weapon {
     private GameController gc;
@@ -13,12 +15,19 @@ public class Weapon {
     private int maxBullets;
     private int curBullets;
     private Vector3[] slots;
+    private Sound shootSound;
 
-    public float getFirePeriod() { return firePeriod; }
+    public float getFirePeriod() {
+        return firePeriod;
+    }
 
-    public int getMaxBullets() { return maxBullets; }
+    public int getMaxBullets() {
+        return maxBullets;
+    }
 
-    public int getCurBullets() { return curBullets; }
+    public int getCurBullets() {
+        return curBullets;
+    }
 
     public Weapon(GameController gc, Hero hero, String title,
                   float firePeriod, int damage, float bulletSpeed,
@@ -32,12 +41,13 @@ public class Weapon {
         this.maxBullets = maxBullets;
         this.curBullets = maxBullets;
         this.slots = slots;
+        this.shootSound = Assets.getInstance().getAssetManager().get("audio/shoot.mp3");
     }
 
     public void fire() {
         if (curBullets > 0) {
             curBullets--;
-
+            shootSound.play();
             for (int i = 0; i < slots.length; i++) {
                 float x, y, vx, vy;
 
@@ -49,6 +59,13 @@ public class Weapon {
 
                 gc.getBulletController().setup(x, y, vx, vy);
             }
+        }
+    }
+
+    public void addAmmos(int amount) {
+        curBullets += amount;
+        if (curBullets > maxBullets) {
+            curBullets = maxBullets;
         }
     }
 }
