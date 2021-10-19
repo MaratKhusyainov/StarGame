@@ -1,6 +1,5 @@
 package com.star.app.screen;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -11,7 +10,7 @@ import com.star.app.screen.utils.Assets;
 
 public class ScreenManager {
     public enum ScreenType {
-        GAME, MENU,
+        GAME, MENU, GAMEOVER
     }
 
     public static final int SCREEN_WIDTH = 1280;
@@ -24,6 +23,7 @@ public class ScreenManager {
     private LoadingScreen loadingScreen;
     private GameScreen gameScreen;
     private MenuScreen menuScreen;
+    private GameOverScreen gameOverScreen;
     private Screen targetScreen;
     private Viewport viewport;
 
@@ -46,6 +46,7 @@ public class ScreenManager {
         this.viewport = new FitViewport(SCREEN_WIDTH, SCREEN_HEIGHT);
         this.gameScreen = new GameScreen(batch);
         this.menuScreen = new MenuScreen(batch);
+        this.gameOverScreen = new GameOverScreen(batch);
         this.loadingScreen = new LoadingScreen(batch);
     }
 
@@ -71,7 +72,11 @@ public class ScreenManager {
                 targetScreen = menuScreen;
                 Assets.getInstance().loadAssets(ScreenType.MENU);
                 break;
-
+            case GAMEOVER:
+                targetScreen = gameOverScreen;
+                gameOverScreen.setDefeatedHero((Hero) args[0]);
+                Assets.getInstance().loadAssets(ScreenType.GAMEOVER);
+                break;
         }
     }
 

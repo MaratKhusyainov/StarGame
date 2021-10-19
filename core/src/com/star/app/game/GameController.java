@@ -1,11 +1,13 @@
 package com.star.app.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.star.app.screen.ScreenManager;
+import com.star.app.screen.utils.Assets;
 
 
 public class GameController {
@@ -21,6 +23,7 @@ public class GameController {
     private boolean pause;
     private int level;
     private float roundTimer;
+    private Music music;
 
     public float getRoundTimer() {
         return roundTimer;
@@ -75,6 +78,9 @@ public class GameController {
         this.tmpVec = new Vector2(0.0f, 0.0f);
         this.level = 1;
         this.roundTimer = 0.0f;
+        this.music = Assets.getInstance().getAssetManager().get("audio/mortal.mp3");
+        this.music.setLooping(true);
+        this.music.play();
 
         generateBigAsteroids(1);
     }
@@ -99,6 +105,9 @@ public class GameController {
         powerUpsController.update(dt);
         particleController.update(dt);
         checkCollisions();
+        if (!hero.isAlive()) {
+            ScreenManager.getInstance().changeScreen(ScreenManager.ScreenType.GAMEOVER, hero);
+        }
         if (asteroidController.getActiveList().size() == 0) {
             level++;
             generateBigAsteroids(level <= 3 ? level : 3);
@@ -180,6 +189,4 @@ public class GameController {
     public void dispose() {
         background.dispose();
     }
-
-
 }
