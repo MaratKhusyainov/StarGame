@@ -17,8 +17,8 @@ public class Asteroid implements Poolable {
     private Vector2 velocity;
     private int hp;
     private int hpMax;
-    private float angle;//угол показа изображения
-    private float rotationSpeed;//скорость вращения
+    private float angle;
+    private float rotationSpeed;
     private float scale;//масштаб
     private boolean active;
     private Circle hitArea;

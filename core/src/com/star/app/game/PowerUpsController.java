@@ -42,4 +42,5 @@ public class PowerUpsController extends ObjectPool<PowerUp> {
         }
         checkPool();
     }
+
 }
