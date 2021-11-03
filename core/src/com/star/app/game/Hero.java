@@ -2,67 +2,232 @@ package com.star.app.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.StringBuilder;
 import com.star.app.screen.ScreenManager;
+import com.star.app.screen.utils.Assets;
 
-public class Hero {
-    private Texture texture;
-    private Vector2 position;
-    private Vector2 lastDisplacement;
-    private float angel;
+public class Hero extends Ship {
 
-    public Vector2 getLastDisplacement() {
-        return lastDisplacement;
+    public enum Skill {
+        HP_MAX(20), HP(20), WEAPON(100), MAGNET(50);
+
+        int cost;
+
+        Skill(int cost) {
+            this.cost = cost;
+        }
     }
 
-    public Hero() {
-        this.texture = new Texture("ship.png");
-        this.position = new Vector2(640,360);
-        this.lastDisplacement = new Vector2(0,0);
-        this.angel = 0.0f;
+    private int score;
+    private int scoreView;
+    private int money;
+    private StringBuilder stringBuilder;
+    private Shop shop;
+    private int critical;
+
+    public int getCritical() {
+        return critical;
     }
 
-    public void render(SpriteBatch batch) {
-        batch.draw(texture, position.x-32, position.y-32, 32,32,64,64,1,1,
-        angel, 0,0,64,64,false,false);
+    public Shop getShop() {
+        return shop;
+    }
+
+    public int getMoney() {
+        return money;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void addScore(int amount) {
+        this.score += amount;
+    }
+
+    public boolean isMoneyEnough(int amount) {
+        return money >= amount;
+    }
+
+    public void decreaseMoney(int amount) {
+        money -= amount;
+    }
+
+    public void setPause(boolean pause) {
+        gc.setPause(pause);
+    }
+
+    public Hero(GameController gc) {
+        super(gc, 100, 640, 360);
+        this.texture = Assets.getInstance().getAtlas().findRegion("ship");
+        this.enginePower = 500.0f;
+        this.money = 100;
+        this.critical = 5;
+        this.ownerType = OwnerType.PLAYER;
+        this.shop = new Shop(this);
+        this.stringBuilder = new StringBuilder();
+        createWeapons();
+        this.weaponNum = 0;
+        this.currentWeapon = weapons[weaponNum];
+    }
+
+    public void renderGUI(SpriteBatch batch, BitmapFont font) {
+        stringBuilder.clear();
+        stringBuilder.append("SCORE: ").append(scoreView).append("\n");
+        stringBuilder.append("HP: ").append(hp).append(" / ").append(hpMax).append("\n");
+        stringBuilder.append("MONEY: ").append(money).append("\n");
+        stringBuilder.append("BULLETS: ").append(currentWeapon.getCurBullets()).append(" / ")
+                .append(currentWeapon.getMaxBullets()).append("\n");
+        stringBuilder.append("MAGNETIC: ").append((int) magneticField.radius).append("\n");
+        font.draw(batch, stringBuilder, 20, 700);
+    }
+
+    public void consume(PowerUp p) {
+        switch (p.getType()) {
+            case MEDKIT:
+                int oldHP = hp;
+                hp += p.getPower();
+                if (hp > hpMax) {
+                    hp = hpMax;
+                }
+                stringBuilder.clear();
+                stringBuilder.append("HP +").append(hp - oldHP);
+                gc.getInfoController().setup(p.getPosition().x, p.getPosition().y,
+                        stringBuilder, Color.GREEN);
+                break;
+            case MONEY:
+                stringBuilder.clear();
+                stringBuilder.append("MONEY +").append(p.getPower());
+                gc.getInfoController().setup(p.getPosition().x, p.getPosition().y,
+                        stringBuilder, Color.YELLOW);
+                money += p.getPower();
+                break;
+            case AMMOS:
+                int count = currentWeapon.addAmmos(p.getPower());
+                stringBuilder.clear();
+                stringBuilder.append("AMMOS +")
+                        .append(count);
+                gc.getInfoController().setup(p.getPosition().x, p.getPosition().y,
+                        stringBuilder, Color.ORANGE);
+                break;
+        }
+    }
+
+    public boolean upgrade(Skill skill) {
+        switch (skill) {
+            case HP_MAX:
+                hpMax += 10;
+                return true;
+            case HP:
+                if (hp < hpMax) {
+                    hp += 10;
+                    if (hp > hpMax) {
+                        hp = hpMax;
+                    }
+                    return true;
+                }
+            case WEAPON:
+                if (weaponNum < weapons.length - 1) {
+                    weaponNum++;
+                    currentWeapon = weapons[weaponNum];
+                    return true;
+                }
+            case MAGNET:
+                magneticField.radius += 10;
+                return true;
+        }
+        return false;
     }
 
     public void update(float dt) {
-        if(Gdx.input.isKeyPressed(Input.Keys.A)) {
-            angel += 180.0f * dt;
-
-        }
-        if(Gdx.input.isKeyPressed(Input.Keys.D)) {
-            angel -= 180.0f * dt;
-        }
-        if(Gdx.input.isKeyPressed(Input.Keys.W)) {
-            position.x += MathUtils.cosDeg(angel) * 240.0f * dt;
-            position.y += MathUtils.sinDeg(angel) * 240.0f * dt;
-            lastDisplacement.set(MathUtils.cosDeg(angel) * 240.0f * dt,
-                    MathUtils.sinDeg(angel) * 240.0f * dt);
-        }
-        //Сделать по кнопке S движение назад с уменьшенной скоростью
-        if(Gdx.input.isKeyPressed(Input.Keys.S)) {
-            position.x += MathUtils.cosDeg(angel) * -140.0f * dt;
-            position.y += MathUtils.sinDeg(angel) * -140.0f * dt;
-        } else {
-            lastDisplacement.set(0,0);
+        super.update(dt);
+        updateScore(dt);
+        if (Gdx.input.isKeyPressed(Input.Keys.P)) {
+            tryToFire();
         }
 
-        if(position.x < 32f) {
-            position.x = 32f;
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            rotate(180.0f, dt);
         }
-        if(position.x > ScreenManager.SCREEN_HEIGHT - 32f) {
-            position.x = ScreenManager.SCREEN_WIDTH - 32f;
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            rotate(-180.0f, dt);
         }
-        if(position.y < 32f) {
-            position.y = 32f;
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            accelerate(dt);
         }
-        if(position.y > ScreenManager.SCREEN_HEIGHT - 32f) {
-            position.y = ScreenManager.SCREEN_HEIGHT - 32f;
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+            brake(dt);
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
+            setPause(true);
+            shop.setVisible(true);
+        }
+
+        if (velocity.len() > 50.0f) {
+            float bx = position.x + MathUtils.cosDeg(angle + 180) * 20;
+            float by = position.y + MathUtils.sinDeg(angle + 180) * 20;
+            for (int i = 0; i < 2; i++) {
+                gc.getParticleController().setup(
+                        bx + MathUtils.random(-4, 4), by + MathUtils.random(-4, 4),
+                        velocity.x * -0.3f + MathUtils.random(-20, 20), velocity.y * -0.3f + MathUtils.random(-20, 20),
+                        0.5f,
+                        1.2f, 0.2f,
+                        1.0f, 0.3f, 0.0f, 1.0f,
+                        1.0f, 1.0f, 1.0f, 1.0f
+                );
+            }
+        }
+    }
+
+    private void updateScore(float dt) {
+        if (scoreView < score) {
+            scoreView += 1000 * dt;
+            if (scoreView > score) {
+                scoreView = score;
+            }
+        }
+    }
+
+    private void createWeapons() {
+        weapons = new Weapon[]{
+                new Weapon(
+                        gc, this, "Laser", 0.2f, 1, 600, 300,
+                        new Vector3[]{
+                                new Vector3(28, 90, 0),
+                                new Vector3(28, -90, 0)
+                        }),
+                new Weapon(
+                        gc, this, "Laser", 0.2f, 1, 600, 300,
+                        new Vector3[]{
+                                new Vector3(28, 0, 0),
+                                new Vector3(28, 90, 20),
+                                new Vector3(28, -90, -20)
+                        }),
+                new Weapon(
+                        gc, this, "Laser", 0.2f, 1, 600, 500,
+                        new Vector3[]{
+                                new Vector3(28, 0, 0),
+                                new Vector3(28, 90, 10),
+                                new Vector3(28, 90, 20),
+                                new Vector3(28, -90, -10),
+                                new Vector3(28, -90, -20)
+                        }),
+                new Weapon(
+                        gc, this, "Laser", 0.1f, 2, 600, 1000,
+                        new Vector3[]{
+                                new Vector3(28, 0, 0),
+                                new Vector3(28, 90, 16),
+                                new Vector3(28, -90, -16)
+                        }),
+        };
     }
 }
